@@ -1,0 +1,918 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>日語 Study App by Wanda</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=DM+Sans:wght@300;400;500;600&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<nav class="app-nav" style="justify-content:flex-start;">
+  <button class="app-nav-tab active" id="nav-quiz" onclick="switchApp('quiz')">📝 Quiz Practice</button>
+  <div style="flex:1"></div>
+
+  <!-- Streak chip -->
+   <div id="locked-stats" style="display:none; align-items:center; gap:0;">
+  <div id="streak-nav-chip" class="streak-nav-chip" title="Roadmap N4+N5 — click to open" onclick="switchApp('roadmap')" style="cursor:pointer;">
+    <div class="streak-flame" id="streak-flame">🔥</div>
+    <div class="streak-info">
+      <div class="streak-count" id="streak-count">0</div>
+      <div class="streak-label">day streak</div>
+    </div>
+  </div>
+
+  <!-- Goal bar chip — click to open Vocab Master -->
+  <div id="goal-nav-chip" class="goal-nav-chip" title="Kotoba Master — click to open" onclick="switchApp('vocab')" style="cursor:pointer;">
+    <div class="goal-icon">⭐</div>
+    <div class="goal-content">
+      <div class="goal-top-row">
+        <span class="goal-nums"><strong id="goal-starred">0</strong><span class="goal-sep">/</span>2500</span>
+        <span class="goal-pct" id="goal-pct">0%</span>
+      </div>
+      <div class="goal-track">
+        <div class="goal-fill" id="goal-fill" style="width:0%"></div>
+      </div>
+      <div class="goal-sub" id="goal-sub">0 words/day</div>
+    </div>
+  </div>
+
+  <div class="app-nav-divider"></div>
+  <!-- Bunpou nav chip with level switcher -->
+  <div class="bunpou-nav-chip-wrap" id="bunpou-chip-wrap">
+    <!-- Level dropdown trigger (left side) -->
+    <div class="bp-lvl-trigger" id="bp-lvl-trigger" onclick="bpToggleLevelDropdown(event)" title="Select level">
+      <span class="bp-lvl-label" id="bp-chip-icon">N5</span>
+      <span class="bp-lvl-caret">▾</span>
+      <!-- Dropdown -->
+      <div class="bp-lvl-dropdown" id="bp-lvl-dropdown">
+        <button class="bp-lvl-opt active" data-level="N5" onclick="bpSelectLevel(event,'N5')">N5</button>
+        <button class="bp-lvl-opt" data-level="N4" onclick="bpSelectLevel(event,'N4')">N4</button>
+        <button class="bp-lvl-opt" data-level="N3" onclick="bpSelectLevel(event,'N3')">N3</button>
+        <button class="bp-lvl-opt" data-level="N2" onclick="bpSelectLevel(event,'N2')">N2</button>
+        <button class="bp-lvl-opt" data-level="N1" onclick="bpSelectLevel(event,'N1')">N1</button>
+      </div>
+    </div>
+    <!-- Progress chip (right side, clicks to bunpou page) -->
+    <div class="bunpou-nav-chip" onclick="switchApp('bunpou')" title="Bunpou progress — click to open">
+      <div class="bunpou-chip-content">
+        <div class="bunpou-top-row">
+          <span class="bunpou-nums" id="bp-chip-nums"><strong>0</strong><span style="color:var(--text3);margin:0 1px">/</span>132</span>
+          <span class="bunpou-pct" id="bp-chip-pct">0%</span>
+        </div>
+        <div class="bunpou-track"><div class="bunpou-fill" id="bp-chip-fill" style="width:0%"></div></div>
+        <div class="bunpou-sub" id="bp-chip-sub">bunpou left</div>
+      </div>
+    </div>
+  </div>
+  </div>
+<button id="google-login-btn" onclick="loginWithGoogle()" style="margin:0 10px;padding:6px 14px;background:#1e1e1e;border:1px solid rgba(255,255,255,0.12);border-radius:8px;font-size:13px;font-weight:600;color:#fff;cursor:pointer;font-family:inherit;">
+  🔐 Sign in with Google
+</button>
+  <div id="cd-nav-area" style="display:none; align-items:center; gap:0; height:100%;"></div>
+  <button id="wanda-lang-btn" onclick="wandaToggleLang()" style="margin:0 10px;padding:5px 12px;background:#1e1e1e;border:1px solid rgba(255,255,255,0.12);border-radius:6px;font-size:12px;font-weight:600;color:#8A8680;cursor:pointer;letter-spacing:0.04em;font-family:inherit;" title="Switch language">🌐 EN</button>
+</nav>
+
+
+
+<div id="quiz-panel" class="app-panel visible">
+  <div class="wrap">
+
+  <div class="app-logo">
+    <div class="logo-dot"></div>
+    <span class="app-name">Quiz Practice</span>
+    <div class="logo-dot"></div>
+  </div>
+
+  <!-- MODE TABS -->
+  <div class="mode-tabs">
+    <button class="mode-tab active" id="tab-vocab"    onclick="switchMode('vocab')">📚 Vocabulary</button>
+    <button class="mode-tab"        id="tab-sent"     onclick="switchMode('sent')">🗣️ Sentence</button>
+    <button class="mode-tab"        id="tab-bunpo"    onclick="switchMode('bunpo')">🔬 Fill Bunpo</button>
+    <button class="mode-tab"        id="tab-kread"    onclick="switchMode('kread')">🔤 Kanji Reading</button>
+    <button class="mode-tab"        id="tab-conj"     onclick="switchMode('conj')">🔀 Conjugation</button>
+  </div>
+
+  <!-- ══ VOCAB MODE ══ -->
+  <div id="vocab-home">
+    <div id="setup-view">
+      <div class="setup-card">
+        <label>Deck — one card per line</label>
+        <textarea id="deck-input" oninput="hideDeckError()">電話 ; でんわ ; Telepon
+食べる ; たべる ; Makan
+水 ; みず ; Air
+本 ; ほん ; Buku
+友達 ; ともだち ; Teman
+お金 ; おかね ; Uang
+ケータイ ; ケータイ ; HP / ponsel
+店 ; みせ ; Toko
+はさみ ; はさみ ; Gunting
+パンチ ; パンチ ; Pelubang kertas</textarea>
+        <p class="hint-text">3 fields: <code>kanji ; reading ; meaning</code> &nbsp;·&nbsp; 2 fields: <code>front ; answer</code></p>
+        <div id="deck-error" style="display:none;margin-top:10px;padding:10px 14px;background:#fff0f0;border:1.5px solid #f87171;border-radius:8px;font-size:13px;color:#b91c1c;line-height:1.6">
+          <strong>⚠️ No valid cards found.</strong> Each line needs at least 2 fields separated by <code style="background:#fecaca;padding:1px 5px;border-radius:4px"> ; </code><br>
+          Examples:<br>
+          &nbsp;&nbsp;<code style="background:#fef2f2;padding:1px 5px;border-radius:4px">水 ; みず ; Water</code>&nbsp; ← kanji ; reading ; meaning<br>
+          &nbsp;&nbsp;<code style="background:#fef2f2;padding:1px 5px;border-radius:4px">Dog ; 犬</code>&nbsp; ← front ; answer
+        </div>
+        <div class="dir-toggle">
+          <button class="dir-btn active" id="dir-forward" onclick="setDir('forward')">JP → Meaning</button>
+          <button class="dir-btn" id="dir-reverse" onclick="setDir('reverse')">Meaning → JP</button>
+        </div>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-primary" onclick="startQuiz()">Start Quiz →</button>
+      </div>
+    </div>
+
+    <div id="quiz-view" style="display:none">
+      <div class="quiz-wrap">
+        <div class="progress-bar-track">
+          <div class="progress-bar-fill" id="prog-bar" style="width:0%"></div>
+        </div>
+        <div class="quiz-card" id="card-box">
+          <div class="card-counter" id="card-prog"></div>
+          <div class="card-front"  id="card-front"></div>
+          <div class="fields"      id="card-fields"></div>
+        </div>
+      </div>
+      <div class="quiz-actions">
+        <button class="btn" onclick="skipCard()">Skip →</button>
+        <button class="btn" onclick="backToSetup()">Edit deck</button>
+      </div>
+    </div>
+
+    <div id="results-view" style="display:none"></div>
+  </div>
+
+  <!-- ══ SENTENCE MODE ══ -->
+  <div id="sent-home" style="display:none">
+
+    <div id="sent-setup-view">
+      <!-- Textarea section -->
+      <div class="setup-card" style="margin-bottom:0.75rem">
+        <label>Sentence List <span style="font-weight:400;color:var(--text3);text-transform:none;letter-spacing:0;font-size:10px">— one sentence per line</span></label>
+        <textarea id="sent-deck-input" style="min-height:160px">毎朝、私は新しい本を読みます。 ; まいあさ、わたしはあたらしいほんをよみます。 ; Setiap pagi, saya membaca buku baru. ; 毎朝-まいあさ=setiap pagi ; 私-わたし=saya ; 新しい-あたらしい=baru ; 本-ほん=buku ; 読みます-よみます=membaca
+日本語を勉強しています。 ; にほんごをべんきょうしています。 ; Saya sedang belajar bahasa Jepang. ; 日本語-にほんご=bahasa Jepang ; 勉強-べんきょう=belajar
+今日の天気はいいですね。 ; きょうのてんきはいいですね。 ; Cuaca hari ini bagus, ya. ; 今日-きょう=hari ini ; 天気-てんき=cuaca
+友達と映画を見に行きました。 ; ともだちとえいがをみにいきました。 ; Saya pergi menonton film bersama teman. ; 友達-ともだち=teman ; 映画-えいが=film ; 行きました-いきました=pergi
+このレストランの料理はおいしいです。 ; このレストランのりょうりはおいしいです。 ; Masakan restoran ini enak. ; 料理-りょうり=masakan</textarea>
+        <p class="hint-text" style="margin-top:8px">Format: <code>kanji ; hiragana ; arti</code></p>
+      </div>
+
+      <!-- Mode picker: translate only -->
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--q-r);padding:1.25rem 1.75rem;margin-bottom:1rem">
+        <div style="font-size:10px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--text3);margin-bottom:14px">Translation Direction</div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px" id="sent-mode-grid">
+          <div class="sent-mode-card active" id="smode-jp2id" onclick="setSentMode('jp2id')">
+            <div class="sent-mode-icon">🇯🇵→🇮🇩</div>
+            <div class="sent-mode-title">JP → Meaning</div>
+          </div>
+          <div class="sent-mode-card" id="smode-id2jp" onclick="setSentMode('id2jp')">
+            <div class="sent-mode-icon">🇮🇩→🇯🇵</div>
+            <div class="sent-mode-title">Meaning → JP</div>
+          </div>
+          <div class="sent-mode-card" id="smode-both" onclick="setSentMode('both')">
+            <div class="sent-mode-icon">🔀</div>
+            <div class="sent-mode-title">Random</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Timer Stepper -->
+      <div class="timer-toggle-row">
+        <label class="timer-toggle-label">
+          <span>⏱</span> Timer per question
+        </label>
+        <span class="timer-range-info" id="sent-timer-info">Off</span>
+        <div class="timer-stepper">
+          <button class="timer-stepper-btn" onclick="stepTimer('sent',-5)">−</button>
+          <span class="timer-off-label" id="sent-timer-val">OFF</span>
+          <button class="timer-stepper-btn" onclick="stepTimer('sent',5)">+</button>
+        </div>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn btn-primary" onclick="startSentQuiz()">Start Quiz →</button>
+      </div>
+    </div>
+
+    <div id="sent-quiz-view" style="display:none">
+      <div class="quiz-wrap">
+        <div class="progress-bar-track">
+          <div class="progress-bar-fill" id="sent-prog-bar" style="width:0%"></div>
+        </div>
+        <div class="quiz-card" id="sent-card-box">
+          <div class="card-counter" id="sent-card-prog"></div>
+          <div id="sent-timer-display" style="display:none" class="quiz-timer-wrap">
+            <div class="quiz-timer-ring" id="sent-timer-ring">
+              <svg width="38" height="38" viewBox="0 0 44 44">
+                <circle class="timer-track" cx="22" cy="22" r="18"/>
+                <circle class="timer-fill" id="sent-timer-fill" cx="22" cy="22" r="18" stroke-dasharray="113.1" stroke-dashoffset="0"/>
+              </svg>
+              <div class="quiz-timer-num" id="sent-timer-num">30</div>
+            </div>
+            <span class="quiz-timer-label">seconds left</span>
+          </div>
+          <div class="sent-direction-badge" id="sent-dir-badge"></div>
+          <div class="sent-prompt" id="sent-prompt"></div>
+          <div class="fields" id="sent-fields"></div>
+        </div>
+      </div>
+      <div class="quiz-actions">
+        <button class="btn" onclick="skipSentCard()">Skip →</button>
+        <button class="btn" onclick="backToSentSetup()">Edit deck</button>
+      </div>
+    </div>
+
+    <div id="sent-results-view" style="display:none"></div>
+  </div>
+
+
+  <!-- ══ FILL BUNPO MODE (Unified Particle + Grammar JLPT) ══ -->
+  <div id="bunpo-home" style="display:none">
+
+    <div id="bunpo-setup-view">
+
+      <!-- Textarea: user's own sentences -->
+      <div class="setup-card" style="margin-bottom:0.75rem" id="bp-own-area">
+        <label>Your Sentences <span style="font-weight:400;color:var(--text3);text-transform:none;letter-spacing:0;font-size:10px">— one sentence per line</span></label>
+        <textarea id="bunpo-deck-input" style="min-height:140px;width:100%;font-family:'Courier New',monospace;font-size:12.5px;line-height:1.8;padding:12px 14px;border:1px solid var(--border-strong);border-radius:var(--q-r-sm);background:var(--surface2);color:var(--text);resize:vertical;outline:none;caret-color:var(--accent);">毎朝、私は新しい本を読みます。 ; まいあさ、わたしはあたらしいほんをよみます。
+日本語を勉強しています。 ; にほんごをべんきょうしています。
+今日の天気はいいですね。 ; きょうのてんきはいいですね。
+友達と映画を見に行きました。 ; ともだちとえいがをみにいきました。
+仕事が終わってから、飲みに行きました。 ; しごとがおわってから、のみにいきました。
+雨が降っているので、出かけません。 ; あめがふっているので、でかけません。
+音楽を聴きながら、勉強します。 ; おんがくをききながら、べんきょうします。
+毎日練習したのに、試合に負けました。 ; まいにちれんしゅうしたのに、しあいにまけました。
+早く寝なければなりません。 ; はやくねなければなりません。
+薬を飲んでおきました。 ; くすりをのんでおきました。
+コーヒーを飲みながら、本を読みます。 ; コーヒーをのみながら、ほんをよみます。
+仕事が終わってから、友達に電話します。 ; しごとがおわってから、ともだちにでんわします。</textarea>
+        <p class="hint-text" style="margin-top:8px">Format: <code>kanji ; hiragana ; meaning</code> — particles &amp; grammar patterns auto-detected from your sentences</p>
+      </div>
+
+      <!-- Source toggle -->
+      <div class="setup-card" style="margin-bottom:0.75rem">
+        <label>Question Source</label>
+        <div class="dir-toggle" style="margin-top:0;flex-wrap:wrap">
+          <button class="dir-btn active" id="bpsrc-own"    onclick="setBunpoSource('own')">✏️ My Sentences</button>
+          <button class="dir-btn"        id="bpsrc-n5"     onclick="setBunpoSource('N5')">📋 Bank N5</button>
+          <button class="dir-btn"        id="bpsrc-n4"     onclick="setBunpoSource('N4')">📋 Bank N4</button>
+          <button class="dir-btn"        id="bpsrc-n5n4"   onclick="setBunpoSource('N5N4')">📋 N5+N4</button>
+          <button class="dir-btn"        id="bpsrc-jlpt"   onclick="setBunpoSource('jlpt')">🏆 JLPT</button>
+          <button class="dir-btn"        id="bpsrc-jlptn5" onclick="setBunpoSource('jlptN5')">🏆 JLPT N5</button>
+          <button class="dir-btn"        id="bpsrc-jlptn4" onclick="setBunpoSource('jlptN4')">🏆 JLPT N4</button>
+        </div>
+        <p class="hint-text" style="margin-top:6px" id="bpsrc-hint">Particles &amp; grammar patterns auto-detected from your sentences</p>
+      </div>
+
+      <!-- Seconds per sentence -->
+      <div class="setup-card" style="margin-bottom:0.75rem">
+        <label>Time per Question</label>
+        <div class="timer-toggle-row" style="margin-top:0">
+          <span class="timer-toggle-label">Seconds per sentence</span>
+          <span class="timer-range-info" id="bp-secs-info">Off</span>
+          <div class="timer-stepper">
+            <button class="timer-stepper-btn" onclick="stepBunpoSecs(-5)">−</button>
+            <span class="timer-off-label" id="bp-secs-val">OFF</span>
+            <button class="timer-stepper-btn" onclick="stepBunpoSecs(5)">+</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="btn-row" style="gap:8px">
+        <button class="btn btn-primary" onclick="startBunpoQuiz(false)">🎲 Start New Quiz →</button>
+        <button class="btn" onclick="startBunpoQuiz(true)">🔁 Repeat Same Questions</button>
+      </div>
+    </div>
+
+    <!-- Quiz view -->
+    <div id="bunpo-quiz-view" style="display:none">
+      <div class="quiz-wrap">
+        <div class="progress-bar-track">
+          <div class="progress-bar-fill" id="bunpo-prog-bar" style="width:0%"></div>
+        </div>
+        <div class="quiz-card" id="bunpo-card-box">
+          <div class="card-counter" id="bunpo-card-prog"></div>
+
+          <!-- Timer display -->
+          <div id="bunpo-timer-display" style="display:none" class="quiz-timer-wrap">
+            <div class="quiz-timer-ring">
+              <svg width="38" height="38" viewBox="0 0 44 44">
+                <circle class="timer-track" cx="22" cy="22" r="18"/>
+                <circle class="timer-fill" id="bunpo-timer-fill" cx="22" cy="22" r="18" stroke-dasharray="113.1" stroke-dashoffset="0"/>
+              </svg>
+              <div class="quiz-timer-num" id="bunpo-timer-num">30</div>
+            </div>
+          </div>
+
+          <!-- badge row: level + type -->
+          <div style="display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:0.9rem">
+            <span id="bunpo-level-badge" style="font-size:10px;font-weight:700;letter-spacing:0.1em;padding:3px 10px;border-radius:99px;"></span>
+            <span id="bunpo-type-badge"  style="font-size:10px;font-weight:600;padding:3px 10px;border-radius:99px;background:var(--surface3);color:var(--text3);border:1px solid var(--border)"></span>
+          </div>
+
+          <!-- No hint shown — advanced mode -->
+          <div id="bunpo-hint" style="display:none"></div>
+
+          <!-- Sentence with blank -->
+          <div id="bunpo-sentence" style="font-family:var(--font-jp);font-size:21px;font-weight:600;line-height:2;color:var(--text);margin-bottom:0.4rem;padding:1rem 1.25rem;background:var(--surface2);border:1px solid var(--border);border-radius:var(--q-r-sm);text-align:center;word-break:break-all;"></div>
+
+          <!-- Hiragana reading line (particle mode only) -->
+          <div id="bunpo-reading" style="font-family:var(--font-jp);font-size:13px;color:var(--text3);text-align:center;margin-bottom:0.5rem;min-height:1.4em;word-break:break-all;"></div>
+
+          <!-- No meaning shown — advanced mode -->
+          <div id="bunpo-meaning" style="display:none"></div>
+
+          <!-- Choices 2×2 grid -->
+          <div id="bunpo-choices" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;max-width:480px;margin:0 auto;"></div>
+
+          <!-- Explanation after answer -->
+          <div id="bunpo-explanation" style="display:none;margin-top:1rem;padding:12px 14px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--q-r-sm);font-size:12.5px;color:var(--text2);line-height:1.7;"></div>
+        </div>
+      </div>
+      <div class="quiz-actions">
+        <button class="btn" id="bunpo-next-btn" style="display:none" onclick="nextBunpoCard()">Next →</button>
+        <button class="btn" id="bunpo-skip-btn" onclick="skipBunpoCard()">Skip ↷</button>
+        <button class="btn" id="bunpo-finish-btn" onclick="finishBunpoEarly()">Done ✓</button>
+        <button class="btn" onclick="backToBunpoSetup()">← Setup</button>
+      </div>
+    </div>
+
+    <!-- Results view -->
+    <div id="bunpo-results-view" style="display:none"></div>
+
+  </div>
+
+
+  <!-- ══ KANJI READING MODE ══ -->
+  <div id="kread-home" style="display:none">
+
+    <div id="kread-setup-view">
+      <div class="setup-card" style="margin-bottom:0.75rem">
+        <label>Sentence List <span style="font-weight:400;color:var(--text3);text-transform:none;letter-spacing:0;font-size:10px">— one sentence per line</span></label>
+        <textarea id="kread-deck-input" style="min-height:160px">毎朝、私は新しい本を読みます。 ; まいあさ、わたしはあたらしいほんをよみます。 ; Setiap pagi, saya membaca buku baru. ; 毎朝-まいあさ=setiap pagi ; 私-わたし=saya ; 新しい-あたらしい=baru ; 本-ほん=buku ; 読みます-よみます=membaca
+日本語を勉強しています。 ; にほんごをべんきょうしています。 ; Saya sedang belajar bahasa Jepang. ; 日本語-にほんご=bahasa Jepang ; 勉強-べんきょう=belajar
+今日の天気はいいですね。 ; きょうのてんきはいいですね。 ; Cuaca hari ini bagus, ya. ; 今日-きょう=hari ini ; 天気-てんき=cuaca
+友達と映画を見に行きました。 ; ともだちとえいがをみにいきました。 ; Saya pergi menonton film bersama teman. ; 友達-ともだち=teman ; 映画-えいが=film ; 行きました-いきました=pergi
+このレストランの料理はおいしいです。 ; このレストランのりょうりはおいしいです。 ; Masakan restoran ini enak. ; 料理-りょうり=masakan</textarea>
+        <p class="hint-text" style="margin-top:8px">Format: <code>kanji ; hiragana ; meaning ; word-reading=meaning ; …</code><br>
+        Example: <code>毎朝-まいあさ=every morning ; 本-ほん=book</code></p>
+      </div>
+
+      <!-- Timer Stepper -->
+      <div class="timer-toggle-row">
+        <label class="timer-toggle-label">
+          <span>⏱</span> Timer per question
+        </label>
+        <span class="timer-range-info" id="kread-timer-info">Off</span>
+        <div class="timer-stepper">
+          <button class="timer-stepper-btn" onclick="stepTimer('kread',-5)">−</button>
+          <span class="timer-off-label" id="kread-timer-val">OFF</span>
+          <button class="timer-stepper-btn" onclick="stepTimer('kread',5)">+</button>
+        </div>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn btn-primary" onclick="startKreadFromHome()">Start Quiz →</button>
+      </div>
+    </div>
+
+    <div id="kread-quiz-view" style="display:none">
+      <div class="quiz-wrap">
+        <div class="progress-bar-track">
+          <div class="progress-bar-fill" id="kread-prog-bar" style="width:0%"></div>
+        </div>
+        <div class="quiz-card" id="kread-card-box">
+          <div class="card-counter" id="kread-card-prog"></div>
+          <div id="kread-timer-display" style="display:none" class="quiz-timer-wrap">
+            <div class="quiz-timer-ring" id="kread-timer-ring">
+              <svg width="38" height="38" viewBox="0 0 44 44">
+                <circle class="timer-track" cx="22" cy="22" r="18"/>
+                <circle class="timer-fill" id="kread-timer-fill" cx="22" cy="22" r="18" stroke-dasharray="113.1" stroke-dashoffset="0"/>
+              </svg>
+              <div class="quiz-timer-num" id="kread-timer-num">30</div>
+            </div>
+            <span class="quiz-timer-label">seconds left</span>
+          </div>
+          <div id="kread-sentence-display" class="kread-sentence"></div>
+          <div id="kread-prompt-label" class="kread-prompt-label"></div>
+          <div id="kread-meaning" class="kread-meaning"></div>
+          <div class="fields" id="kread-fields"></div>
+        </div>
+      </div>
+      <div class="quiz-actions">
+        <button class="btn" onclick="skipKreadCard()">Skip →</button>
+        <button class="btn" onclick="backToKreadSetup()">Edit deck</button>
+      </div>
+    </div>
+
+    <div id="kread-results-view" style="display:none"></div>
+  </div>
+
+
+  <div id="conj-home" style="display:none">
+
+    <div id="conj-setup-view">
+      <div class="conj-setup">
+
+        <!-- Word list -->
+        <div class="conj-card">
+          <div class="conj-section-title">Word List — one word per line</div>
+          <textarea id="conj-deck-input" class="conj-word-area" style="width:100%;min-height:140px;font-family:'Courier New',monospace;font-size:12.5px;line-height:1.8;padding:12px 14px;border:1px solid var(--border-strong);border-radius:var(--q-r-sm);background:var(--surface2);color:var(--text);resize:vertical;outline:none;caret-color:var(--accent);">食べる ; たべる ; Makan ; v2
+飲む ; のむ ; Minum ; v1
+書く ; かく ; Menulis ; v1
+見る ; みる ; Melihat ; v2
+来る ; くる ; Datang ; v3
+する ; する ; Melakukan ; v3
+話す ; はなす ; Berbicara ; v1
+待つ ; まつ ; Menunggu ; v1
+読む ; よむ ; Membaca ; v1
+聞く ; きく ; Mendengar ; v1
+暑い ; あつい ; Panas ; adj-i
+寒い ; さむい ; Dingin ; adj-i
+きれい ; きれい ; Cantik/Bersih ; adj-na
+静か ; しずか ; Tenang ; adj-na
+学生 ; がくせい ; Mahasiswa ; noun</textarea>
+          <p class="hint-text" style="margin-top:8px">Format: <code>kanji ; reading ; meaning ; type</code><br>
+          Word type: <span class="word-type-hint wt-v1">v1</span> Godan &nbsp; <span class="word-type-hint wt-v2">v2</span> Ichidan &nbsp; <span class="word-type-hint wt-v3">v3</span> Irregular &nbsp; <span class="word-type-hint wt-adj">adj-i</span> い形容詞 &nbsp; <span class="word-type-hint wt-na">adj-na</span> な形容詞 &nbsp; <span class="word-type-hint wt-n">noun</span> 名詞</p>
+        </div>
+
+        <!-- Forms to practice -->
+        <div class="conj-card">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+            <div class="conj-section-title" style="margin:0">Choose Conjugation Forms</div>
+            <div class="select-all-row" style="margin:0">
+              <button class="tiny-btn" onclick="selectAllForms(true)">Select All</button>
+              <button class="tiny-btn" onclick="selectAllForms(false)">Clear All</button>
+            </div>
+          </div>
+          <div class="form-accordion" id="form-accordion"></div>
+        </div>
+
+        <!-- Word types filter -->
+        <div class="conj-card">
+          <div class="conj-section-title">Filter Word Type</div>
+          <div class="select-all-row">
+            <button class="tiny-btn" onclick="selectAllTypes(true)">Select All</button>
+            <button class="tiny-btn" onclick="selectAllTypes(false)">Clear All</button>
+          </div>
+          <div class="checkbox-grid" id="type-checkboxes"></div>
+        </div>
+
+      </div>
+
+      <div class="btn-row" style="gap:8px">
+        <button class="btn" onclick="toggleCheatsheet()">📖 View Formulas</button>
+        <button class="btn btn-primary" onclick="startConjQuiz()">Start Quiz →</button>
+      </div>
+
+      <button class="cheatsheet-toggle" onclick="toggleCheatsheet()" id="cs-toggle-btn" style="margin-top:1rem">▸ View Formulas</button>
+      <div class="cheatsheet" id="cheatsheet-panel">
+        <div class="cs-grid" id="cheatsheet-content"></div>
+      </div>
+    </div>
+
+    <!-- CONJUGATION QUIZ -->
+    <div id="conj-quiz-view" style="display:none">
+      <div class="quiz-wrap">
+        <div class="progress-bar-track">
+          <div class="progress-bar-fill" id="conj-prog-bar" style="width:0%"></div>
+        </div>
+        <div class="quiz-card" id="conj-card-box">
+          <div class="card-counter" id="conj-card-prog"></div>
+          <div class="conj-card-header">
+            <div class="conj-word-display" id="conj-word-kanji"></div>
+            <div class="conj-word-reading" id="conj-word-reading"></div>
+            <div class="conj-word-meaning" id="conj-word-meaning"></div>
+            <div class="conj-badges" id="conj-word-badges"></div>
+          </div>
+          <div class="conj-prompt" id="conj-prompt-box">
+            <div class="conj-prompt-label">Change to form</div>
+            <div class="conj-prompt-text" id="conj-prompt-text"></div>
+            <div class="conj-prompt-sub" id="conj-prompt-sub"></div>
+          </div>
+          <div class="fields" id="conj-fields"></div>
+        </div>
+      </div>
+      <div class="quiz-actions">
+        <button class="btn" onclick="skipConjCard()">Skip →</button>
+        <button class="btn" onclick="backToConjSetup()">Edit</button>
+      </div>
+    </div>
+
+    <!-- CONJUGATION RESULTS -->
+    <div id="conj-results-view" style="display:none"></div>
+
+  </div>
+
+</div>
+
+</div>
+
+<div id="vocab-panel" class="app-panel">
+
+<div class="vocab-inner">
+
+<header>
+  <div class="logo">日語 <span>Vocab</span></div>
+  <div class="cat-wrap">
+    <select id="catSelect" onchange="switchTab(this.value)">
+      <option value="verbs">Verbs</option>
+      <option value="adjs">Adjectives</option>
+      <option value="advs">Adverbs</option>
+      <option value="nouns">Nouns</option>
+      <option value="words">Connectors</option>
+      <option value="counters">Numbers &amp; Counters</option>
+      <option value="particles">Particles</option>
+      <option value="expressions">Expressions</option>
+      <option value="questions">Question Words</option>
+      <option value="pronouns">Pronouns &amp; Demonstratives</option>
+      <option value="fillers">Fillers, Phrases &amp; Onomatopoeia</option>
+    </select>
+    <span class="cat-count" id="catCount"></span>
+  </div>
+  <button class="gachabtn" onclick="openGacha()">🎲 Daily Gacha</button>
+  <span class="global-progress" id="globalProg"><span class="gp-star">★</span> <strong id="gpStarCount">0</strong>/<span id="gpTotal">0</span></span>
+  <button class="planbtn" onclick="openPlan()">📅 Study Plan</button>
+</header>
+
+<!-- Gacha Modal -->
+<div id="gachaModal" onclick="if(event.target===this)closeGacha()">
+  <div class="gm-box">
+    <div class="gm-head">
+      <div>
+        <div class="gm-title">🎲 Daily Word Gacha</div>
+        <div class="gm-sub" id="gmSub">45 new words to memorize today — excluding already starred ones</div>
+      </div>
+      <button class="gm-close" onclick="closeGacha()">✕</button>
+    </div>
+    <div class="gm-body" id="gachaBody"></div>
+    <div class="gm-footer">
+      <span class="gm-info" id="gachaInfo"></span>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <button id="gachaRollBtn" class="gm-reroll" onclick="doRoll()">🎲 Roll!</button>
+        <button onclick="resetAllStars()" style="background:none;border:1px solid var(--border);color:var(--text3);font-size:13px;padding:7px 13px;border-radius:var(--v-r);cursor:pointer;font-family:inherit;font-weight:500;" title="Reset all stars">🗑 Reset ⭐</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Study Plan Modal -->
+<div id="planModal" onclick="if(event.target===this)closePlan()">
+  <div class="pm-box">
+    <div class="pm-head">
+      <div>
+        <div class="pm-title">📅 Study Plan</div>
+        <div class="pm-sub" id="pmSub">Track daily memorization · 45 words/day · Drill every week & 3 days</div>
+      </div>
+      <button class="pm-close" onclick="closePlan()">✕</button>
+    </div>
+    <div class="pm-body">
+      <!-- Global Progress -->
+      <div class="gp-banner">
+        <div class="gp-nums">
+          <div class="gp-big" id="planGpStar">0</div>
+          <div class="gp-label">words starred</div>
+        </div>
+        <div class="gp-bar-wrap">
+          <div class="gp-bar-bg"><div class="gp-bar-fill" id="planGpBar" style="width:0%"></div></div>
+          <div class="gp-bar-txt">Total across all categories: <strong id="planGpStarred">0</strong> / <strong id="planGpTotal">0</strong> words · <strong id="planGpPct">0</strong>%</div>
+        </div>
+      </div>
+
+      <!-- 3-Day Drill Notif -->
+      <div id="drillNotif" style="display:none;background:rgba(245,184,66,.07);border:1px solid rgba(245,184,66,.3);border-radius:8px;padding:10px 16px;align-items:center;gap:10px;">
+        <span style="font-size:18px;">⚡</span>
+        <div style="flex:1;">
+          <div style="font-size:12px;font-weight:600;color:#f5c842;" id="drillNotifTitle">Time to Review!</div>
+          <div style="font-size:11px;color:var(--text2);margin-top:1px;" id="drillNotifDesc"></div>
+        </div>
+      </div>
+
+      <!-- Week Nav -->
+      <div class="week-nav">
+        <div class="week-nav-title" id="weekLabel">Week 1</div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span style="font-size:11px;color:var(--text2)" id="weekRange"></span>
+          <div class="week-nav-btns">
+            <button class="wnbtn" onclick="changeWeek(-1)" id="prevWeekBtn">← Prev</button>
+            <button class="wnbtn" onclick="changeWeek(0)" id="todayWeekBtn">Today</button>
+            <button class="wnbtn" onclick="changeWeek(1)" id="nextWeekBtn">Next →</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Day grid -->
+      <div class="days-grid" id="daysGrid"></div>
+
+      <!-- Day Detail / Drill Panel -->
+      <div id="dayDetail"></div>
+
+      <!-- Review History -->
+      <div class="rv-panel">
+        <div class="rv-head">
+          <span class="rv-title">📖 Review History</span>
+          <div class="rv-picks">
+            <button class="rv-pick active" onclick="setReview('all',this)">All</button>
+            <button class="rv-pick" onclick="setReview('month',this)">This Month</button>
+            <button class="rv-pick" onclick="setReview('week',this)">This Week</button>
+            <button class="rv-pick" onclick="setReview('3days',this)">3 Days</button>
+          </div>
+
+        </div>
+        <div id="rvSummary" class="rv-summary"></div>
+        <div class="rv-body" id="rvBody"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="controls">
+  <div class="sw">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+    <input type="text" id="search" placeholder="Search kanji, kana, or meaning..." oninput="render()">
+  </div>
+  <select id="typeFilter" class="filter" onchange="render()"><option value="">All types</option></select>
+  <select id="levelFilter" class="filter" onchange="render()">
+    <option value="">All levels</option>
+    <option value="N5">N5</option><option value="N4">N4</option>
+    <option value="N3">N3</option><option value="N2">N2</option><option value="N1">N1</option>
+  </select>
+  <div class="sf-combo" id="sfCombo">
+    <button class="sfbtn sf-main" id="sfBtn" onclick="toggleStarFilter()">★ Starred</button>
+    <button class="sfbtn sf-chevron" id="sfChevron" onclick="toggleColorDropdown(event)" title="Filter by mastery color">▾</button>
+    <div class="sf-dropdown" id="sfDropdown">
+      <button class="sf-drop-item" id="mfRed"    onclick="toggleMasteryFilter('red');closeColorDropdown()">🔴 <span>New / Hard</span></button>
+      <button class="sf-drop-item" id="mfYellow" onclick="toggleMasteryFilter('yellow');closeColorDropdown()">🟡 <span>So-so</span></button>
+      <button class="sf-drop-item" id="mfGreen"  onclick="toggleMasteryFilter('green');closeColorDropdown()">🟢 <span>Mastered</span></button>
+    </div>
+  </div>
+  <span class="wc" id="wcount"></span>
+</div>
+
+<div class="prog">
+  <div class="prog-bg"><div class="prog-fill" id="progFill" style="width:0%"></div></div>
+  <span class="prog-txt" id="progTxt"></span>
+</div>
+
+<div class="tbl-wrap">
+  <table>
+    <thead id="thead"></thead>
+    <tbody id="tbody"></tbody>
+  </table>
+  <div class="empty" id="empty" style="display:none">
+    <div style="font-size:28px">🔍</div>
+    <p>No results found.</p>
+  </div>
+</div><!-- /tbl-wrap -->
+
+
+</div><!-- /vocab-inner -->
+</div><!-- /vocab-panel -->
+
+<div id="countdown-panel" class="app-panel">
+
+<div class="cd-wrap">
+
+  <div class="cd-logo">
+    <div class="logo-dot"></div>
+    <span class="cd-title-label">⏳ Test Countdown</span>
+    <div class="logo-dot"></div>
+  </div>
+
+  <!-- Add Event Form -->
+  <div class="cd-add-card">
+    <div class="cd-add-head">
+      <div class="cd-add-head-icon">📅</div>
+      <div>
+        <div class="cd-add-head-text">Add Test Date</div>
+        <div class="cd-add-head-sub">Set a target date and countdown in real time</div>
+      </div>
+    </div>
+
+    <div class="cd-form-row">
+      <div class="cd-field">
+        <label>Test Name</label>
+        <input type="text" id="cd-input-name" placeholder="e.g. JLPT N5, NAT Test…" maxlength="50"/>
+        <div class="cd-quick-tags">
+          <span class="cd-quick-tag jlpt" onclick="cdQuickFill('JLPT N5','jlpt')">⚡ JLPT N5</span>
+          <span class="cd-quick-tag jlpt" onclick="cdQuickFill('JLPT N4','jlpt')">⚡ JLPT N4</span>
+          <span class="cd-quick-tag nat"  onclick="cdQuickFill('NAT Test','nat')">⚡ NAT Test</span>
+        </div>
+      </div>
+      <div class="cd-field">
+        <label>Test Date</label>
+        <input type="date" id="cd-input-date"/>
+      </div>
+      <button class="cd-add-btn" onclick="cdAddEvent()">+ Add</button>
+    </div>
+  </div>
+
+  <!-- Active Countdowns -->
+  <div id="cd-active-grid" class="cd-events-grid"></div>
+
+  <!-- Past Events -->
+  <div id="cd-past-section" style="display:none">
+    <div class="cd-past-header">
+      <div class="cd-past-line"></div>
+      <span>Past Tests</span>
+      <div class="cd-past-line"></div>
+    </div>
+    <div id="cd-past-grid" class="cd-events-grid"></div>
+  </div>
+
+</div><!-- /cd-wrap -->
+</div><!-- /countdown-panel -->
+
+
+
+<script src="js/app.js"></script>
+
+<script src="js/timer.js"></script>
+
+<script src="js/quiz.js"></script>
+
+<script src="js/vocab.js"></script>
+<script src="js/countdown.js"></script>
+
+<script src="js/streak.js"></script>
+
+
+
+<!-- ══════════════════════════════════════════════════ -->
+<!-- BUNPOU N5 PANEL -->
+<!-- ══════════════════════════════════════════════════ -->
+
+<div id="bunpou-panel" class="app-panel">
+  <div class="bp-wrap">
+    <div class="bp-logo">
+      <div class="bp-logo-dot"></div>
+      <div class="bp-logo-text">JLPT N5 · Bunpou</div>
+      <div class="bp-logo-dot"></div>
+    </div>
+
+    <!-- Progress Hero -->
+    <div class="bp-hero">
+      <div class="bp-hero-left">
+        <div class="bp-hero-star">📚</div>
+        <div class="bp-hero-counts">
+          <div class="bp-hero-done" id="bp-done-count">0</div>
+          <div class="bp-hero-sep">/</div>
+          <div class="bp-hero-total" id="bp-total-count">0</div>
+        </div>
+        <div class="bp-hero-pct" id="bp-pct-text">0% mastered</div>
+        <div class="bp-hero-bar"><div class="bp-hero-bar-fill" id="bp-bar-fill" style="width:0%"></div></div>
+        <div class="bp-hero-sub">Grammar points checked</div>
+      </div>
+      <div class="bp-hero-right">
+        <div class="bp-stat-pill">
+          <div class="bp-stat-icon">✅</div>
+          <div class="bp-stat-body">
+            <div class="bp-stat-val" id="bp-stat-done">0</div>
+            <div class="bp-stat-label">Checked</div>
+          </div>
+        </div>
+        <div class="bp-stat-pill">
+          <div class="bp-stat-icon">⬜</div>
+          <div class="bp-stat-body">
+            <div class="bp-stat-val" id="bp-stat-left">0</div>
+            <div class="bp-stat-label">Remaining</div>
+          </div>
+        </div>
+        <div class="bp-stat-pill">
+          <div class="bp-stat-icon">📂</div>
+          <div class="bp-stat-body">
+            <div class="bp-stat-val" id="bp-stat-cats">9</div>
+            <div class="bp-stat-label">Categories</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Controls -->
+    <div class="bp-controls">
+      <input class="bp-search" id="bp-search" type="text" placeholder="Search grammar, romaji, meaning..." oninput="bpRender()">
+      <select class="bp-cat-filter" id="bp-cat-filter" onchange="bpRender()">
+        <option value="">All categories</option>
+        <option value="particle">Particles</option>
+        <option value="copula">Copula / Nouns</option>
+        <option value="verb">Verb Forms</option>
+        <option value="adj">Adjectives</option>
+        <option value="sentence">Sentence Patterns</option>
+        <option value="question">Questions</option>
+        <option value="time">Time & Frequency</option>
+        <option value="connect">Connecting / Conjunctions</option>
+        <option value="counter">Numbers & Counters</option>
+      </select>
+      <button class="bp-show-btn" id="bp-unchecked-btn" onclick="bpToggleUnchecked()">☐ Show unchecked only</button>
+      <button class="bp-show-btn" onclick="bpResetAll()" style="color:var(--danger-text)">↺ Reset all</button>
+    </div>
+
+    <div class="bp-stats-line">
+      <span id="bp-stats-text">Loading...</span>
+    </div>
+
+    <div id="bp-output"></div>
+  </div>
+</div>
+
+<script src="js/bunpou.js"></script>
+
+<!-- ══════════════════════════════════════════════════ -->
+<!-- ROADMAP PANEL — Duolingo-style N4+N5 pairing map  -->
+<!-- ══════════════════════════════════════════════════ -->
+
+<div id="roadmap-panel" class="app-panel">
+  <div class="rm-wrap">
+
+    <div class="rm-hero">
+      <div class="rm-hero-badge">🗾 Study Roadmap</div>
+      <div class="rm-hero-title">N4 + N5 Path</div>
+      <div class="rm-hero-sub">25 paired sessions — each session studies a new N4 chapter<br>while reviewing the relevant N5 chapter.</div>
+      <div class="rm-progress-bar-wrap">
+        <div class="rm-progress-label">
+          <span>Progress</span>
+          <strong id="rm-prog-text">0 / 25</strong>
+        </div>
+        <div class="rm-progress-track">
+          <div class="rm-progress-fill" id="rm-prog-fill" style="width:0%"></div>
+        </div>
+      </div>
+      <div class="rm-legend">
+        <div class="rm-legend-item"><div class="rm-legend-dot p1"></div>Priority 1 — do first</div>
+        <div class="rm-legend-item"><div class="rm-legend-dot p2"></div>Priority 2 — weeks 5–7</div>
+        <div class="rm-legend-item"><div class="rm-legend-dot p3"></div>Priority 3 — before JLPT</div>
+      </div>
+    </div>
+
+    <div class="rm-path" id="rm-path"></div>
+
+  </div>
+
+  <!-- Tooltip -->
+  <div class="rm-tooltip" id="rm-tooltip"></div>
+</div>
+
+<script src="js/roadmap.js"></script>
+
+<footer style="
+  text-align: center;
+  padding: 20px 16px 28px;
+  color: #545250;
+  font-size: 11px;
+  font-family: 'Inter', 'DM Sans', sans-serif;
+  border-top: 1px solid rgba(255,255,255,0.06);
+  margin-top: 0;
+  letter-spacing: 0.06em;
+  background: #0a0a0a;
+">
+  © 2026 <span style="color:#6357D4;">Wanda Gusniar</span> &nbsp;·&nbsp; 日語 Study App &nbsp;·&nbsp; All rights reserved
+</footer>
+
+
+<script src="js/i18n.js"></script>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-app.js";
+  import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } 
+    from "https://www.gstatic.com/firebasejs/12.18.0/firebase-auth.js";
+  import { getFirestore, doc, setDoc, getDoc } 
+    from "https://www.gstatic.com/firebasejs/12.18.0/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyCRT3JfJQN-JTjWcbD0Bx0bp-Ucdu4KrGQ",
+    authDomain: "japanese-quiz-c8791.firebaseapp.com",
+    projectId: "japanese-quiz-c8791",
+    storageBucket: "japanese-quiz-c8791.firebasestorage.app",
+    messagingSenderId: "33540151406",
+    appId: "1:33540151406:web:33bffee5ef682a141fae7f",
+    measurementId: "G-J9W0L2P42G"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+  const provider = new GoogleAuthProvider();
+
+  window.loginWithGoogle = () => signInWithPopup(auth, provider).catch(console.error);
+  window.logout = () => signOut(auth);
+
+  onAuthStateChanged(auth, (user) => {
+    const stats = document.getElementById('locked-stats');
+    const loginBtn = document.getElementById('google-login-btn');
+    if (user) {
+      console.log("Logged in as", user.displayName, user.uid);
+      stats.style.display = 'flex';
+      loginBtn.style.display = 'none';
+    } else {
+      console.log("Not logged in");
+      stats.style.display = 'none';
+      loginBtn.style.display = 'flex';
+    }
+  });
+</script>
+</body>
+</html>
