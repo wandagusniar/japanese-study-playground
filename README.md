@@ -1,4 +1,7 @@
-![Japanese Study Playground Logo](./assets/Japanese%20Study%20Playground-%20Logo.png)
+<p align="center">
+  <img src="assets/Japanese%20Study%20Playground-%20Logo.png" width="300" alt="Japanese Study Playground Logo">
+</p>
+
 # Japanese Study Playground
 
 A personal Japanese study tool — built because existing apps didn't fit how I actually study for N5/N4.
