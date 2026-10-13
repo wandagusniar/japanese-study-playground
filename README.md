@@ -1,4 +1,4 @@
-# 日語 Study App
+# Japanese Study Playground
 
 A personal Japanese study tool — built because existing apps didn't fit how I actually study for N5/N4.
 
